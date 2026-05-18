@@ -78,6 +78,46 @@ class PredictorWorker(QThread):
                     iou_thresh_nms = self.config.get('nms_threshold', 0.25)
                     detections_px = nms_per_class(detections_px, iou_thresh_nms)
 
+                    # Handle conflict pairs
+                    conflicts = self.config.get('conflicts', {})
+                    for (prio_id, sec_id), threshold in conflicts.items():
+                        # Handle both 2-element and 3-element tuples
+                        prio_boxes = []
+                        for item in detections_px:
+                            if len(item) == 3:
+                                cid, b, _ = item
+                            else:  # len(item) == 2
+                                cid, b = item
+                            if cid == prio_id:
+                                prio_boxes.append(b)
+                        
+                        sec_detections = []
+                        for item in detections_px:
+                            if len(item) == 3:
+                                sid, sbox, conf = item
+                            else:  # len(item) == 2
+                                sid, sbox = item
+                                conf = 1.0
+                            if sid == sec_id:
+                                sec_detections.append((sid, sbox, conf))
+                        
+                        final_sec = []
+                        for sid, sbox, conf in sec_detections:
+                            if not any(compute_iou(pbox, sbox) > threshold for pbox in prio_boxes):
+                                final_sec.append((sid, sbox, conf))
+                        
+                        # Remove secondary class detections and add filtered ones
+                        filtered_detections_px = []
+                        for item in detections_px:
+                            if len(item) == 3:
+                                cid, bbox, conf = item
+                            else:  # len(item) == 2
+                                cid, bbox = item
+                            if cid != sec_id:
+                                filtered_detections_px.append(item)
+                        detections_px = filtered_detections_px
+                        detections_px.extend(final_sec)
+
                     filtered_detections = []
                     for i, det in enumerate(detections_px):
                         if len(det) == 3:

@@ -393,6 +393,7 @@ class AnnotationApp(QMainWindow):
             class_info['detection_count_label'].setText(f"Detections: {count}/{total}")
         
         # Draw detections with class colors
+        names_by_cid = {w['cid']: w['name'] for w in getattr(self, 'class_widgets', [])}
         for cid, (x1, y1, x2, y2) in dets:
             # Get class color (RGB format)
             color_rgb = self.class_colors.get(cid, (0, 255, 0))  # Default green if not found
@@ -401,7 +402,7 @@ class AnnotationApp(QMainWindow):
             cv2.rectangle(img, (x1, y1), (x2, y2), color_bgr, 2)
             try:
                 # Add class ID and name to the label
-                class_name = f"ID:{cid}"  # In a full implementation, you'd map ID to name
+                class_name = names_by_cid.get(cid, f"ID:{cid}")
                 cv2.putText(img, class_name, (int(x1), int(max(0, y1-5))), 0, 0.5, color_bgr, 1)
             except Exception as e:
                 print(f"Error drawing text: {e}")

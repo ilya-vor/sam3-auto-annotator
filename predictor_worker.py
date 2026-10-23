@@ -19,10 +19,11 @@ class PredictorWorker(QThread):
     def run(self):
         try:
             yaml_path = Path(self.config['dataset_path'])
+            yaml_dir = yaml_path.parent
             with open(yaml_path, 'r') as f:
                 data_cfg = yaml.safe_load(f)
 
-            train_images_dir = (yaml_path / data_cfg['train']).resolve()
+            train_images_dir = (yaml_dir / data_cfg['train']).resolve()
             labels_dir = train_images_dir.parent / "labels"
             labels_dir.mkdir(parents=True, exist_ok=True)
 

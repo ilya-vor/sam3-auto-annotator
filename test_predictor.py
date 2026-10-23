@@ -22,10 +22,11 @@ class TestPredictorWorker(QThread):
     def run(self):
         try:
             yaml_path = Path(self.config['dataset_path'])
+            yaml_dir = yaml_path.parent
             with open(yaml_path, 'r') as f:
                 data_cfg = yaml.safe_load(f)
             
-            train_images_dir = (yaml_path / data_cfg['train']).resolve()
+            train_images_dir = (yaml_dir / data_cfg['train']).resolve()
             files = [p for p in train_images_dir.iterdir() if p.is_file() and p.suffix.lower() in ['.jpg', '.jpeg', '.png', '.bmp']]
             if not files:
                 self.error.emit("No images found in training directory.")
